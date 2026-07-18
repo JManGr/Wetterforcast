@@ -118,7 +118,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
             if (location is null)
             {
-                StatusMessage = $"❌ Stadt '{City}' nicht gefunden.";
+                StatusMessage = $"❌ Stadt '{City}' nicht gefunden!";
                 return;
             }
 

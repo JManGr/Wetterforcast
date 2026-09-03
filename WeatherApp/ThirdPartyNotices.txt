@@ -1,0 +1,63 @@
+WeatherApp – Third Party Notices
+===============================
+
+Dieses Projekt nutzt folgende Open-Source-Komponenten und Datenquellen.
+Lizenzen und Attributionen sind einzuhalten (Store-Veröffentlichung).
+
+1) Framework & Bibliotheken (MIT)
+---------------------------------
+- Avalonia 11.3.7 (Avalonia, Avalonia.Desktop, Avalonia.Android, Avalonia.Themes.Fluent, Avalonia.Fonts.Inter)
+  Lizenz: MIT – https://github.com/AvaloniaUI/Avalonia/blob/master/licence.md
+  Copyright (c) AvaloniaUI
+
+- LiveChartsCore.SkiaSharpView.Avalonia 2.0.5
+  Lizenz: MIT – https://github.com/beto-rodriguez/LiveCharts2/blob/master/LICENSE
+
+- CommunityToolkit.Mvvm 8.4.2
+  Lizenz: MIT – https://github.com/CommunityToolkit/dotnet/blob/main/License.md
+  Copyright (c) Microsoft
+
+- SkiaSharp 2.88.9 / HarfBuzzSharp 7.3.x / SkiaSharp.NativeAssets.Android
+  Lizenz: MIT – https://github.com/mono/SkiaSharp/blob/main/LICENSE.md
+  Copyright (c) Microsoft
+
+- .NET 10 Runtime & SDK
+  Lizenz: MIT – https://github.com/dotnet/runtime/blob/main/LICENSE.TXT
+
+Alle MIT-Lizenzen verlangen Beibehaltung des Copyright-Hinweises – erfüllt durch diese Datei.
+Binärdistribution enthält keine Copyleft-Pflicht (LGPL/GPL).
+
+2) Datenquellen & APIs (Attribution Pflicht, kein API-Key)
+---------------------------------------------------------
+- DWD Niederschlagsradar (dwd:Niederschlagsradar, 1km, 5min, maps.dwd.de)
+  Quelle: Deutscher Wetterdienst (DWD) Open Data
+  Lizenz: DWD Open Data + GeoNutzV, Attribution: "© Deutscher Wetterdienst https://www.dwd.de"
+  Verwendung: Services/DwdRadarService.cs, UI: Views/MainView.axaml / MainWindow.axaml Attribution bereits vorhanden
+  Hinweis: https://www.dwd.de/DE/service/copyright/copyright_node.html
+
+- met.no Locationforecast 2.0 (api.met.no/weatherapi/locationforecast/2.0/compact)
+  Lizenz: CC BY 4.0 – https://api.met.no/doc/TermsOfService
+  Pflicht: identifizierender User-Agent (WeatherApp/1.0 ...) + Quellenangabe
+  Verwendung: Services/WeatherService.cs, UI: "Quelle: met.no" in Views/MainView.axaml
+  Copyright: Norwegian Meteorological Institute / met.no
+
+- Open-Meteo Geocoding API (geocoding-api.open-meteo.com)
+  Lizenz: CC BY 4.0 – https://open-meteo.com/en/terms
+  Verwendung: Services/GeocodingService.cs
+
+- Overpass API / OpenStreetMap (nur falls wieder aktiviert, Services/OverpassService.cs)
+  Daten: © OpenStreetMap contributors, ODbL 1.0 – https://www.openstreetmap.org/copyright
+  Lizenz Daten: ODbL, Karten-Tiles nicht enthalten
+
+3) Eigene Daten
+---------------
+- Fallback-Städteliste ViewModels/MainViewModel.cs (_fallbackOver100k / _fallback30to100k, 150km, bis zu 15 Pins)
+  Eigene Zusammenstellung auf Basis öffentlicher Einwohnerzahlen (Destatis), keine Fremdlizenz.
+  Koordinaten gerundet, CC0.
+
+4) Hinweise Store
+----------------
+- Android Permission INTERNET + ACCESS_NETWORK_STATE (AndroidManifest.xml) erfordert Privacy Policy (auch wenn keine personenbezogenen Daten gespeichert werden).
+- ThirdPartyNotices.txt im APK/Store-Listing beilegen (Google Play → App-Inhalt → Open-Source-Hinweise).
+
+Stand: 2026-09-02, .NET 10 LTS, Avalonia 11.3.7

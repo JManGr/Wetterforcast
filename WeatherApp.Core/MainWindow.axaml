@@ -1,0 +1,21 @@
+<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:vm="using:WeatherApp.ViewModels"
+		xmlns:views="using:WeatherApp.Views"
+		x:Class="WeatherApp.MainWindow"
+		x:DataType="vm:MainViewModel"
+		Title="Wettervorhersage – 7-Tage + Regenradar"
+		Width="1020" Height="820"
+		MinWidth="800" MinHeight="620"
+		Background="#1E1E2E"
+		Icon="avares://WeatherApp.Core/Assets/weather-icon.png">
+
+	<Window.DataContext>
+		<vm:MainViewModel />
+	</Window.DataContext>
+
+	<!-- Single Source of Truth für die UI ist Views/MainView.axaml
+	     (wird auch direkt als SingleView auf Android genutzt). -->
+	<views:MainView />
+
+</Window>

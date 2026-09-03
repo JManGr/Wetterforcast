@@ -1,0 +1,298 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:WeatherApp.ViewModels"
+             xmlns:models="using:WeatherApp.Models"
+             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             x:Class="WeatherApp.Views.MainView"
+             x:DataType="vm:MainViewModel"
+              Background="#1E1E2E">
+
+    <!-- Kein eigenes DataContext: wird vererbt – vom MainWindow (Desktop)
+         bzw. explizit gesetzt in App.axaml.cs (Android SingleView).
+         Single Source of Truth für die gesamte Haupt-UI. -->
+
+    <UserControl.Styles>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#2A2A3E"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="MinWidth" Value="92"/>
+        </Style>
+        <Style Selector="TextBlock.header">
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="#AAAACC"/>
+        </Style>
+        <Style Selector="TextBlock.value">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="TextBlock.emoji">
+            <Setter Property="FontSize" Value="28"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="TabItem">
+            <Setter Property="Background" Value="#2A2A3E"/>
+            <Setter Property="Foreground" Value="#AAAACC"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="Margin" Value="2,0"/>
+            <Setter Property="CornerRadius" Value="8,8,0,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="TabItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#34344E"/>
+        </Style>
+        <Style Selector="TabItem:selected">
+            <Setter Property="Background" Value="#3A3A5E"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="16">
+
+        <!-- Zeile 0: Eingabe -->
+        <Border Grid.Row="0" Background="#2A2A3E" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+            <Grid ColumnDefinitions="*,16,Auto">
+                <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Text="Stadt" Classes="label"/>
+                    <TextBox Text="{Binding City}" PlaceholderText="z. B. Bestwig" CornerRadius="6"/>
+                    <!-- Mehrdeutiger Name: Treffer wählen (lädt direkt) -->
+                    <ComboBox ItemsSource="{Binding LocationCandidates}"
+                              SelectedItem="{Binding SelectedCandidate, Mode=TwoWay}"
+                              PlaceholderText="❓ Treffer wählen…"
+                              CornerRadius="6"
+                              MaxDropDownHeight="220"
+                              IsVisible="{Binding HasLocationCandidates}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="models:GeocodingResult">
+                                <TextBlock Text="{Binding DisplayName}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+                <Button Grid.Column="2"
+                        Command="{Binding LoadWeatherCommand}"
+                        IsEnabled="{Binding !IsLoading}"
+                        VerticalAlignment="Bottom"
+                        Padding="20,8" CornerRadius="6"
+                        Background="#4285F4" Foreground="White" FontWeight="SemiBold">
+                    <Panel>
+                        <TextBlock Text="🔍 Laden" IsVisible="{Binding !IsLoading}"/>
+                        <TextBlock Text="⏳ Laden…" IsVisible="{Binding IsLoading}"/>
+                    </Panel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Zeile 1: Stadttitel -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,10">
+            <TextBlock Text="{Binding CityTitle}" Classes="header"
+                       IsVisible="{Binding CityTitle, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+        </StackPanel>
+
+        <!-- Zeile 2: Äußerer TabControl mit 7-Tage + Regenradar -->
+        <Border Grid.Row="2" Background="#1E1E2E" CornerRadius="10" Padding="8">
+            <TabControl>
+                <!-- Tab 1: 7-Tage Vorhersage -->
+                <TabItem Header="☀️ 7-Tage">
+                    <Panel Margin="0,8,0,0">
+                        <TextBlock Text="Noch keine Daten – Stadt eingeben und auf 'Laden' klicken."
+                                   Foreground="#AAAACC" FontSize="13"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   IsVisible="{Binding !Forecast.HasForecastDays}" />
+                        <TabControl ItemsSource="{Binding Forecast.ForecastDays}"
+                                    SelectedIndex="0"
+                                    IsVisible="{Binding Forecast.HasForecastDays}"
+                                    Padding="0" Background="Transparent">
+                            <TabControl.ItemTemplate>
+                                <DataTemplate DataType="models:ForecastDayGroup">
+                                    <TextBlock Text="{Binding DayLabel}" />
+                                </DataTemplate>
+                            </TabControl.ItemTemplate>
+                            <TabControl.DataTemplates>
+                                <DataTemplate DataType="models:ForecastDayGroup">
+                                    <Grid RowDefinitions="Auto,Auto,*" Margin="0,8,0,0">
+                                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="4,0,0,6">
+                                            <TextBlock Text="{Binding DateLabel}" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                            <TextBlock Text="{Binding TempRangeDisplay}" Foreground="#4285F4" FontWeight="Bold" FontSize="13"/>
+                                            <TextBlock Text="{Binding SummaryDisplay}" Foreground="#AAAACC" FontSize="12" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,10">
+                                            <ItemsControl ItemsSource="{Binding Cards}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:ForecastCardModel">
+                                                        <Border Classes="card">
+                                                            <StackPanel Spacing="5" HorizontalAlignment="Center">
+                                                                <TextBlock Text="{Binding Time}" Classes="label" HorizontalAlignment="Center"/>
+                                                                <TextBlock Text="{Binding IconEmoji}" Classes="emoji"/>
+                                                                <TextBlock Text="{Binding TempDisplay}" Classes="value" HorizontalAlignment="Center"/>
+                                                                <TextBlock Text="{Binding Description}" Classes="label" HorizontalAlignment="Center" TextWrapping="Wrap" MaxWidth="90" TextAlignment="Center"/>
+                                                                <TextBlock Text="{Binding PrecipitationDisplay}" Foreground="#66AAFF" FontSize="11" HorizontalAlignment="Center"/>
+                                                                <TextBlock Text="{Binding HumidityDisplay}" Classes="label" HorizontalAlignment="Center"/>
+                                                                <TextBlock Text="{Binding WindDisplay}" Classes="label" HorizontalAlignment="Center"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                        <Border Grid.Row="2" Background="#2A2A3E" CornerRadius="10" Padding="8">
+                                            <lvc:CartesianChart Series="{Binding TemperatureSeries}" XAxes="{Binding XAxes}" YAxes="{Binding YAxes}" Background="Transparent"/>
+                                        </Border>
+                                    </Grid>
+                                </DataTemplate>
+                            </TabControl.DataTemplates>
+                        </TabControl>
+                    </Panel>
+                </TabItem>
+
+                <!-- Tab 2: Regenradar (DWD Niederschlagsradar 1km + met.no 4h Vorschau) -->
+                <TabItem Header="🌧️ Regenradar (DWD)">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="0,8,0,0">
+                            <!-- Steuerleiste Radar Vergangenheit -->
+                            <Border Grid.Row="0" Background="#2A2A3E" CornerRadius="8" Padding="8" Margin="0,0,0,8">
+                                <WrapPanel Orientation="Horizontal">
+                                    <Button Content="◀" Command="{Binding Radar.RadarPrevCommand}" Padding="10,4" CornerRadius="6" Background="#3A3A5E" Foreground="White" Margin="0,0,6,0"
+                                            IsEnabled="{Binding Forecast.HasForecastDays}"/>
+                                    <Button Command="{Binding Radar.ToggleRadarPlayCommand}" Padding="12,4" CornerRadius="6" Background="#4285F4" Foreground="White" Margin="0,0,6,0">
+                                        <Panel>
+                                            <TextBlock Text="▶ Play" IsVisible="{Binding !Radar.IsRadarPlaying}"/>
+                                            <TextBlock Text="⏸ Pause" IsVisible="{Binding Radar.IsRadarPlaying}"/>
+                                        </Panel>
+                                    </Button>
+                                    <Button Content="▶" Command="{Binding Radar.RadarNextCommand}" Padding="10,4" CornerRadius="6" Background="#3A3A5E" Foreground="White" Margin="0,0,6,0"
+                                            IsEnabled="{Binding Forecast.HasForecastDays}"/>
+                                    <Slider Minimum="0" Maximum="{Binding Radar.RadarMaxIndex}" Value="{Binding Radar.SelectedRadarIndex}"
+                                            Width="160" TickFrequency="1" IsSnapToTickEnabled="True"
+                                            VerticalAlignment="Center" Margin="0,0,8,0" IsEnabled="{Binding Forecast.HasForecastDays}"/>
+                                    <TextBlock Text="{Binding Radar.SelectedRadarLabel}" Foreground="White" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" MinWidth="60" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding Radar.RadarStatus}" Foreground="#AAAACC" FontSize="11" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="260" Margin="0,0,8,0"/>
+                                    <Button Content="↻" Command="{Binding Radar.RefreshRadarCommand}" Padding="10,4" CornerRadius="6" Background="#3A3A5E" Foreground="White"
+                                            IsEnabled="{Binding !Radar.IsRadarLoading}"/>
+                                </WrapPanel>
+                            </Border>
+
+                            <!-- Radar-Bild DWD 1km – mit Live 100km Pins -->
+                            <Border Grid.Row="1" Background="#0F0F1E" CornerRadius="10" Padding="8" ClipToBounds="True" MinHeight="260">
+                                <Grid RowDefinitions="*,Auto">
+                                    <Panel Grid.Row="0">
+                                        <TextBlock Text="Noch kein Radar – erst Stadt laden. Danach erscheint hier das DWD Niederschlagsradar (1km, 5min, 512x512, zentriert auf Ort)."
+                                                   Foreground="#666688" FontSize="12" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   IsVisible="{Binding Radar.RadarImage, Converter={x:Static ObjectConverters.IsNull}}"/>
+                                        <Viewbox Stretch="Uniform" MaxHeight="400" IsVisible="{Binding Radar.RadarImage, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                            <Canvas Width="512" Height="512" Background="#0F0F1E">
+                                                <Image Source="{Binding Radar.RadarImage}" Width="512" Height="512" Canvas.Left="0" Canvas.Top="0" Stretch="Fill"/>
+                                                <!-- 150km Kreis – korrekt zentriert: 512×512 Kreis um Zentrum 256/256, Radius 256px = 150km -->
+                                                <Ellipse Width="512" Height="512" Stroke="#66FFFFFF" StrokeThickness="1" Opacity="0.35" Canvas.Left="0" Canvas.Top="0" IsVisible="{Binding Orientation.OrientationPins.Count}"/>
+                                                <!-- Live-Pins 150km – echtes Canvas mit absolutem Ursprung Top-Left (0,0) = Nord-West -->
+                                                <ItemsControl ItemsSource="{Binding Orientation.OrientationPins}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <Canvas Width="512" Height="512" Background="Transparent"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.Styles>
+                                                        <Style Selector="ContentPresenter" x:DataType="models:OrientationPin">
+                                                            <Setter Property="Canvas.Left" Value="{Binding CanvasLeft}"/>
+                                                            <Setter Property="Canvas.Top" Value="{Binding CanvasTop}"/>
+                                                        </Style>
+                                                    </ItemsControl.Styles>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="models:OrientationPin">
+                                                            <!-- Kein festes 9×9 Panel – sonst wird Label abgeschnitten. Grid darf überlaufen -->
+                                                            <Grid ToolTip.Tip="{Binding DisplayLabel}">
+                                                                <Ellipse Width="9" Height="9" Fill="#FFD700" Stroke="White" StrokeThickness="1.5" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                                                <Border Background="#80000000" CornerRadius="5" Padding="5,2" Margin="11,-6,0,0" BorderBrush="#33FFFFFF" BorderThickness="1" HorizontalAlignment="Left" VerticalAlignment="Top" Opacity="0.85" IsVisible="{Binding ShowLabel}">
+                                                                    <StackPanel Spacing="0">
+                                                                        <TextBlock Text="{Binding Name}" Foreground="White" FontSize="11" FontWeight="Bold" TextWrapping="NoWrap"/>
+                                                                        <TextBlock Text="{Binding DistanceKm, StringFormat='{}{0:F0} km'}" Foreground="#FFD700" FontSize="9"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <!-- Zentrum (aktueller Ort) – exakt bei 256/256 -->
+                                                <Ellipse Width="10" Height="10" Fill="#4285F4" Stroke="White" StrokeThickness="2" Canvas.Left="251" Canvas.Top="251"/>
+                                            </Canvas>
+                                        </Viewbox>
+                                        <Border Background="#CC1E1E2E" CornerRadius="6" Padding="8,4" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,8,0,0"
+                                                IsVisible="{Binding Radar.IsRadarLoading}">
+                                            <TextBlock Text="⏳ Radar wird geladen…" Foreground="White" FontSize="12"/>
+                                        </Border>
+                                    </Panel>
+                                    <TextBlock Grid.Row="1" Text="{Binding Orientation.OrientationStatus}" Foreground="#666688" FontSize="10" Margin="0,6,0,0"
+                                               IsVisible="{Binding Orientation.OrientationStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- 4-Stunden Vorschau met.no -->
+                            <Border Grid.Row="2" Background="#2A2A3E" CornerRadius="10" Padding="10" Margin="0,10,0,0">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="4-Stunden Vorschau (met.no – Niederschlag)" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                    <ItemsControl ItemsSource="{Binding Forecast.NextHours}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="models:ForecastCardModel">
+                                                <Border Classes="card" MinWidth="110">
+                                                    <StackPanel Spacing="5" HorizontalAlignment="Center">
+                                                        <TextBlock Text="{Binding Time}" Classes="label" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding IconEmoji}" Classes="emoji"/>
+                                                        <TextBlock Text="{Binding TempDisplay}" Classes="value" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding PrecipitationDisplay}" Foreground="#66AAFF" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Description}" Classes="label" HorizontalAlignment="Center" TextWrapping="Wrap" MaxWidth="90" TextAlignment="Center"/>
+                                                        <TextBlock Text="{Binding HumidityDisplay}" Classes="label" HorizontalAlignment="Center" FontSize="10"/>
+                                                        <TextBlock Text="{Binding WindDisplay}" Classes="label" HorizontalAlignment="Center" FontSize="10"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <Border Background="#1E1E2E" CornerRadius="8" Padding="6" Height="170">
+                                        <lvc:CartesianChart Series="{Binding Forecast.PrecipitationSeries}" XAxes="{Binding Forecast.PrecipitationXAxes}" YAxes="{Binding Forecast.PrecipitationYAxes}" Background="Transparent"/>
+                                    </Border>
+                                    <TextBlock Text="Quelle: met.no next_1_hours precipitation_amount (mm/h) – DWD Radar oben: Vergangenheit 2h + Vorhersage (5min, 1km) via maps.dwd.de." Foreground="#666688" FontSize="10" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Attribution -->
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+                                <TextBlock Text="©" Foreground="#666688" FontSize="10"/>
+                                <TextBlock Text="Deutscher Wetterdienst" Foreground="#4285F4" FontSize="10"/>
+                                <TextBlock Text="https://www.dwd.de – maps.dwd.de WMS Niederschlagsradar 1km" Foreground="#666688" FontSize="10"/>
+                                <TextBlock Text="{Binding Radar.RadarTileUrl}" Foreground="#444466" FontSize="8" TextTrimming="CharacterEllipsis" MaxWidth="300"/>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
+        </Border>
+
+        <!-- Zeile 3: Statusleiste -->
+        <Border Grid.Row="3" Background="#2A2A3E" CornerRadius="8" Padding="10,6" Margin="0,10,0,0">
+            <TextBlock Text="{Binding StatusMessage}" Foreground="#AAAACC" FontSize="12"/>
+        </Border>
+
+    </Grid>
+</UserControl>

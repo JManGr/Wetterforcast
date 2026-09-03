@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="../WeatherApp.Core/WeatherApp.Core.csproj" />
+  <Project Path="WeatherApp.csproj" />
+  <Project Path="../WeatherApp.Android2/WeatherApp.Android.csproj" />
+  <Project Path="../WeatherApp.Tests/WeatherApp.Tests.csproj" />
+</Solution>

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>WeatherApp</RootNamespace>
+    <AssemblyName>WeatherApp</AssemblyName>
+    <ApplicationIcon>Assets\weather-icon.ico</ApplicationIcon>
+    <!-- Avalonia benötigt diesen Hint für XAML-Compiler -->
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WeatherApp.Core\WeatherApp.Core.csproj" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.2" />
+  </ItemGroup>
+
+</Project>
